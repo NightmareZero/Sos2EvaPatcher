@@ -20,16 +20,39 @@ using HarmonyLib;
 
 namespace Template
 {
+    internal static class DefValue
+    {
+        internal const String EvaTagName = "EVA";
+    }
+
     internal class Sos2EvaPatchSettings : ModSettings
     {
+
+        #region modConfig
+        public bool inited = false;
+
+        public bool enabled = false;
         public List<ThingDef> eva = new List<ThingDef>();
+        #endregion
 
         public override void ExposeData()
         {
             base.ExposeData();
+            if (!this.inited)
+            {
+                this.InitData();
+            }
             List<string> list = this.eva?.Select(selector: td => td.defName).ToList() ?? new List<string>();
-            Scribe_Collections.Look(list: ref list, label: "sos2PatchedEvaList");
+            Scribe_Collections.Look(list: ref list, label: "EvaPatchedList");
+            Scribe_Values.Look(value: ref inited, label: "EvaPatchedInited", defaultValue: false);
             this.eva = list.Select(selector: DefDatabase<ThingDef>.GetNamedSilentFail).Where(predicate: td => td != null).ToList();
+        }
+
+        public void InitData()
+        {
+            this.inited = true;
+            this.enabled = false;
+            this.eva = new List<ThingDef>();
         }
     }
 
@@ -42,7 +65,7 @@ namespace Template
             // Instance = this;
         }
 
-        public override string SettingsCategory() => "EvaPatcher";
+        public override string SettingsCategory() => "EvaPatcherGeneralSettings";
 
         public override void DoSettingsWindowContents(Rect inRect)
         {

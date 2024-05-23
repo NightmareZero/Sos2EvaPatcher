@@ -1,0 +1,4 @@
+Harmony: https://github.com/pardeike/HarmonyRimWorld.git
+MinifyEverything: https://github.com/erdelf/MinifyEverything.git
+NoDecreeQuest: https://github.com/Shadowrabbit/NoDecreeQuest.git
+SaveOurShip2Experimental: https://github.com/SonicTHI/SaveOurShip2Experimental.git
