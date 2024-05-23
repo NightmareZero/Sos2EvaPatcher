@@ -43,6 +43,7 @@ namespace Template
                 this.InitData();
             }
             List<string> list = this.eva?.Select(selector: td => td.defName).ToList() ?? new List<string>();
+            // load config
             Scribe_Collections.Look(list: ref list, label: "EvaPatchedList");
             Scribe_Values.Look(value: ref inited, label: "EvaPatchedInited", defaultValue: false);
             this.eva = list.Select(selector: DefDatabase<ThingDef>.GetNamedSilentFail).Where(predicate: td => td != null).ToList();
@@ -70,11 +71,17 @@ namespace Template
         public override void DoSettingsWindowContents(Rect inRect)
         {
             base.DoSettingsWindowContents(inRect: inRect);
-            //     Listing_Standard listingStandard = new Listing_Standard();
-            //     listingStandard.Begin(inRect);
-            //     listingStandard.CheckboxLabeled("Disable Eva", ref settings.eva, "Disable Eva");
-            //     listingStandard.End();
-            //     settings.Write();
+            Text.Font = GameFont.Medium;
+            Listing_Standard ls = new Listing_Standard();
+            ls.Begin(inRect);
+            ls.Label("EvaPatcherGeneralSettings".Translate());
+            ls.GapLine(20f);
+            ls.Label("Enable EvaPatcher".Translate());
+            ls.CheckboxLabeled("Enable EvaPatcher".Translate(), ref settings.enabled, "Enable EvaPatcher".Translate());
+            ls.GapLine(20f);
+            //     ls.CheckboxLabeled("Disable Eva", ref settings.eva, "Disable Eva");
+            ls.End();
+            settings.Write();
         }
     }
 
