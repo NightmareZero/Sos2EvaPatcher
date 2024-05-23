@@ -16,10 +16,46 @@ using RimWorld.Planet;
 
 // *Uncomment for Harmony*
 // using System.Reflection;
-// using HarmonyLib;
+using HarmonyLib;
 
 namespace Template
 {
+    internal class Sos2EvaPatchSettings : ModSettings
+    {
+        public List<ThingDef> eva = new List<ThingDef>();
+
+        public override void ExposeData()
+        {
+            base.ExposeData();
+            List<string> list = this.eva?.Select(selector: td => td.defName).ToList() ?? new List<string>();
+            Scribe_Collections.Look(list: ref list, label: "sos2PatchedEvaList");
+            this.eva = list.Select(selector: DefDatabase<ThingDef>.GetNamedSilentFail).Where(predicate: td => td != null).ToList();
+        }
+    }
+
+    internal class Sos2EvaPatcher : Mod
+    {
+        public static Sos2EvaPatchSettings settings;
+        public Sos2EvaPatcher(ModContentPack content) : base(content)
+        {
+            settings = GetSettings<Sos2EvaPatchSettings>();
+            // Instance = this;
+        }
+
+        public override string SettingsCategory() => "EvaPatcher";
+
+        public override void DoSettingsWindowContents(Rect inRect)
+        {
+            base.DoSettingsWindowContents(inRect: inRect);
+            //     Listing_Standard listingStandard = new Listing_Standard();
+            //     listingStandard.Begin(inRect);
+            //     listingStandard.CheckboxLabeled("Disable Eva", ref settings.eva, "Disable Eva");
+            //     listingStandard.End();
+            //     settings.Write();
+        }
+    }
+
+
     [DefOf]
     public class TemplateDefOf
     {
@@ -28,7 +64,7 @@ namespace Template
 
     public class MyMapComponent : MapComponent
     {
-        public MyMapComponent(Map map) : base(map){}
+        public MyMapComponent(Map map) : base(map) { }
         public override void FinalizeInit()
         {
             Messages.Message("Success", null, MessageTypeDefOf.PositiveEvent);
