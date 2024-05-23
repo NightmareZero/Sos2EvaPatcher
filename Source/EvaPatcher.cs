@@ -18,7 +18,7 @@ using RimWorld.Planet;
 // using System.Reflection;
 using HarmonyLib;
 
-namespace Template
+namespace EvaPatcher
 {
     internal static class DefValue
     {
