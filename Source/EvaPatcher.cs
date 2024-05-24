@@ -43,6 +43,13 @@ namespace EvaPatcher
             { ResourceBank.StatDefOf.HypoxiaResistanceOffset, 1f },
         };
 
+        internal static Dictionary<StatDef, float> EVAStat = new Dictionary<StatDef, float>
+        {
+            { ResourceBank.StatDefOf.DecompressionResistanceOffset, 1f },
+            { ResourceBank.StatDefOf.HypoxiaResistanceOffset, 1f },
+            { ResourceBank.StatDefOf.VacuumSpeedMultiplier, 4f },
+        };
+
     }
 
     internal class Sos2EvaPatchSettings : ModSettings
@@ -273,6 +280,27 @@ namespace EvaPatcher
 
         public static void AddEvaPatchFor(ThingDef def)
         {
+            // is armor and helmet
+            if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Torso) &&
+                (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.FullHead) || def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.UpperHead)))
+            {
+                DefValue.EVAStat.ToList().ForEach(x =>
+                {
+                    if (def.statBases.Any(predicate: y => y.stat.defName == x.Key.defName))
+                    {
+                        def.statBases.First(predicate: y => y.stat == x.Key).value = x.Value;
+                    }
+                    else
+                    {
+                        var sm = new StatModifier
+                        {
+                            stat = x.Key,
+                            value = x.Value
+                        };
+                        def.statBases.Add(sm);
+                    }
+                });
+            }
             // is armor
             if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Torso))
             {
