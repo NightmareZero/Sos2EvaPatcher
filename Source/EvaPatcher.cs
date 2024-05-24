@@ -281,7 +281,7 @@ namespace EvaPatcher
         public static void AddEvaPatchFor(ThingDef def)
         {
             // is armor and helmet
-            if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Torso) &&
+            if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Torso) && def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Legs) &&
                 (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.FullHead) || def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.UpperHead)))
             {
                 DefValue.EVAStat.ToList().ForEach(x =>
