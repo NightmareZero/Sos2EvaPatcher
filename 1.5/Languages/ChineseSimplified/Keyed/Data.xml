@@ -5,4 +5,6 @@
     <EvaPatcher.Enable.Desc>启用/禁用太空服处理</EvaPatcher.Enable.Desc>
     <EvaPatcher.Evatag>处理Eva标签</EvaPatcher.Evatag>
     <EvaPatcher.EvaTag.Desc>将Tag中带有"EVA"的衣服/头盔设置为太空服</EvaPatcher.EvaTag.Desc>
+    <EvaPatcher.Available>未处理</EvaPatcher.Available>
+    <EvaPatcher.Patched>太空服</EvaPatcher.Patched>
 </LanguageData>

@@ -58,7 +58,7 @@ namespace EvaPatcher
         // patch all apparel with eva tag to eva suit
         public bool patchEvaTag = false;
         // all patched eva suit
-        public List<ThingDef> eva = new List<ThingDef>();
+        public List<String> eva = new List<String>();
         #endregion
 
         public override void ExposeData()
@@ -66,14 +66,11 @@ namespace EvaPatcher
             base.ExposeData();
 
             // load config
-            List<string> evaName = this.eva?.Select(selector: td => td.defName).ToList() ?? new List<string>();
-            Scribe_Collections.Look(list: ref evaName, label: "EvaPatchedList");
+            Scribe_Collections.Look(list: ref eva, label: "EvaPatchedList");
             Scribe_Values.Look(value: ref inited, label: "EvaPatchedInited", defaultValue: false);
             Scribe_Values.Look(value: ref enabled, label: "EvaPatchedEnabled", defaultValue: false);
             Scribe_Values.Look(value: ref patchEvaTag, label: "EvaPatchedPatchEvaTag", defaultValue: false);
-            this.eva = evaName.Select(selector: DefDatabase<ThingDef>.GetNamedSilentFail).Where(predicate: td => td != null).ToList();
 
-            // FIXME: eva lost after game reload
             if (!this.inited)
             {
                 this.InitData();
@@ -86,7 +83,7 @@ namespace EvaPatcher
             this.inited = true;
             this.enabled = false;
             this.patchEvaTag = false;
-            this.eva = new List<ThingDef>();
+            this.eva = new List<String>();
         }
     }
 
@@ -122,6 +119,7 @@ namespace EvaPatcher
             Text.Font = GameFont.Medium;
 
             List<ThingDef> allApparel = GetAllArmorAndHelmet();
+            List<ThingDef> evaApparel = allApparel.Where(x => settings.eva.Contains(x.defName)).ToList();
 
             Rect topRect = inRect.TopPart(pct: 0.2f);
             Rect leftRect = inRect.BottomPart(pct: 0.79f).LeftPart(pct: 0.45f);
@@ -146,11 +144,12 @@ namespace EvaPatcher
 
             GUI.BeginGroup(position: leftRect, style: new GUIStyle(other: GUI.skin.box));
             // get left list item
-            List<ThingDef> leftList = allApparel.Where(x => !settings.eva.Contains(x))
+            List<ThingDef> leftList = allApparel.Where(x => !settings.eva.Contains(x.defName))
             .Where(x => x.label.Contains(this.searchTerm))
             .ToList();
 
             float leftItemY_Position = 3f;
+            Widgets.Label(rect: rightRect, label: "EvaPatcher.Available".Translate()); // FIXME not show
             Widgets.BeginScrollView(outRect: leftRect.AtZero(), scrollPosition: ref this.leftScrollPosition,
                                     viewRect: new Rect(x: 0f, y: 0f, width: leftRect.width / 10 * 9, height: leftList.Count * 32f));
             if (!leftList.NullOrEmpty())
@@ -176,12 +175,16 @@ namespace EvaPatcher
             #region rightRect
 
             GUI.BeginGroup(position: rightRect, style: new GUIStyle(other: GUI.skin.box));
+            List<ThingDef> rightList = allApparel.Where(x => settings.eva.Contains(x.defName))
+             .Where(x => x.label.Contains(this.searchTerm))
+            .ToList();
             float rightItemY_Position = 3f;
+            Widgets.Label(rect: rightRect, label: "EvaPatcher.Patched".Translate()); // FIXME not show
             Widgets.BeginScrollView(outRect: rightRect.AtZero(), scrollPosition: ref this.rightScrollPosition,
-                                    viewRect: new Rect(x: 0f, y: 0f, width: rightRect.width / 10 * 9, height: settings.eva.Count * 32f));
-            if (!settings.eva.NullOrEmpty())
+                                    viewRect: new Rect(x: 0f, y: 0f, width: rightRect.width / 10 * 9, height: rightList.Count * 32f));
+            if (!rightList.NullOrEmpty())
             {
-                foreach (ThingDef def in settings.eva)
+                foreach (ThingDef def in rightList)
                 {
                     Rect rowRect = new Rect(x: 5, y: rightItemY_Position, width: rightRect.width - 6, height: 30);
                     Widgets.DrawHighlightIfMouseover(rect: rowRect);
@@ -204,8 +207,8 @@ namespace EvaPatcher
             if (Widgets.ButtonImage(butRect: bottomRect.BottomPart(pct: 0.6f).TopPart(pct: 0.1f).RightPart(pct: 0.525f).LeftPart(pct: 0.1f), tex: TexUI.ArrowTexRight) &&
                 this.leftSelectedItem != null)
             {
-                settings.eva.Add(item: this.leftSelectedItem);
-                settings.eva = settings.eva.OrderBy(keySelector: td => td.LabelCap.RawText ?? td.defName).ToList();
+                rightList.Add(item: this.leftSelectedItem);
+                settings.eva = rightList.OrderBy(keySelector: td => td.LabelCap.RawText ?? td.defName).Select(selector: td => td.defName).ToList();
                 this.rightSelectedItem = this.leftSelectedItem;
                 this.leftSelectedItem = null;
                 EvaPatcher.AddEvaPatchFor(def: this.rightSelectedItem);
@@ -215,7 +218,7 @@ namespace EvaPatcher
             if (Widgets.ButtonImage(butRect: bottomRect.BottomPart(pct: 0.4f).TopPart(pct: 0.15f).RightPart(pct: 0.525f).LeftPart(pct: 0.1f), tex: TexUI.ArrowTexLeft) &&
                 this.rightSelectedItem != null)
             {
-                settings.eva.Remove(item: this.rightSelectedItem);
+                settings.eva.Remove(item: this.rightSelectedItem.defName);
                 this.leftSelectedItem = this.rightSelectedItem;
                 this.rightSelectedItem = null;
                 EvaPatcher.RemoveEvaPatchFor(def: this.leftSelectedItem);
@@ -355,10 +358,10 @@ namespace EvaPatcher
         {
             if (Sos2EvaPatchMod.settings.enabled && th.IsApparel)
             {
-                if (Sos2EvaPatchMod.settings.eva.Any(predicate: x => x.defName == th.defName) ||
+                if (Sos2EvaPatchMod.settings.eva.Any(predicate: x => x == th.defName) ||
                     (Sos2EvaPatchMod.settings.patchEvaTag && th.apparel.tags.Contains(DefValue.EvaTagName)))
                 {
-                    Log.Message("EvaPatcher: Patching " + th.defName +":"+ th.label + " to EVA suit");
+                    Log.Message("EvaPatcher: Patching " + th.defName + ":" + th.label + " to EVA suit");
                     AddEvaPatchFor(th);
                 }
             }

@@ -5,4 +5,6 @@
     <EvaPatcher.Enable.Desc>Enable/Disable Sos2 Eva Patcher</EvaPatcher.Enable.Desc>
     <EvaPatcher.Evatag>Patch all "EVA" tag</EvaPatcher.Evatag>
     <EvaPatcher.EvaTag.Desc>Patch all helmet and armor with "EVA" tag as EVA suit</EvaPatcher.EvaTag.Desc>
+    <EvaPatcher.Available>Available</EvaPatcher.Available>
+    <EvaPatcher.Patched>Eva suit</EvaPatcher.Patched>
 </LanguageData>
