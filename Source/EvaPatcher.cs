@@ -13,6 +13,7 @@ using Verse.Noise;
 using Verse.Grammar;
 using RimWorld;
 using RimWorld.Planet;
+using SaveOurShip2;
 
 // *Uncomment for Harmony*
 // using System.Reflection;
@@ -23,6 +24,13 @@ namespace EvaPatcher
     internal static class DefValue
     {
         internal const String EvaTagName = "EVA";
+        internal const String StatsDecompressionResistance = "DecompressionResistance";
+        internal const float ValueDecompressionResistanceArmor = 0.75f;
+        internal const float ValueDecompressionResistanceHelmet = 0.25f;
+        // internal const float Va
+        internal const String StatsVacuumSpeedMultiplier = "VacuumSpeedMultiplier";
+        internal const String StatsHypoxiaResistance = "HypoxiaResistance";
+
     }
 
     internal class Sos2EvaPatchSettings : ModSettings
@@ -59,7 +67,7 @@ namespace EvaPatcher
         {
             this.inited = true;
             this.enabled = false;
-            this.patchEvaTag = false; 
+            this.patchEvaTag = false;
             this.eva = new List<ThingDef>();
         }
     }
@@ -80,7 +88,7 @@ namespace EvaPatcher
         private Vector2 leftScrollPosition;
         private Vector2 rightScrollPosition;
         #endregion
-        
+
         public Sos2EvaPatchMod(ModContentPack content) : base(content)
         {
             settings = GetSettings<Sos2EvaPatchSettings>();
@@ -95,10 +103,19 @@ namespace EvaPatcher
             Text.Font = GameFont.Medium;
 
             // get all apparel
-            List<ThingDef> allApparel = DefDatabase<ThingDef>.AllDefs.Where(predicate: x => x.IsApparel).ToList();
+            List<ThingDef> allApparel = DefDatabase<ThingDef>.AllDefs.Where(predicate: x => x.IsApparel)
+            .Where(x =>
+            (x.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Torso) && x.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Legs)) ||
+             x.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.FullHead) ||
+              x.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.UpperHead))
+            .ToList();
+
+            Rect topRect = inRect.TopPart(pct: 0.05f);
+            Rect leftRect = inRect.BottomPart(pct: 0.45f).LeftPart(pct: 0.5f);
+            Rect bottomRect = inRect.BottomPart(pct: 0.9f);
+            Rect rightRect = inRect.BottomPart(pct: 0.45f).RightPart(pct: 0.5f);
 
             #region topRect
-            Rect topRect = inRect.TopPart(pct: 0.05f);
             Listing_Standard ls = new Listing_Standard();
             ls.Begin(topRect);
             ls.Label("EvaPatcherGeneralSettings".Translate());
@@ -111,27 +128,26 @@ namespace EvaPatcher
             ls.CheckboxLabeled("UseEvatag".Translate(), ref settings.enabled, "UseEvatag".Translate());
             ls.GapLine(20f);
             this.searchTerm = Widgets.TextField(rect: topRect.RightPart(pct: 0.95f).LeftPart(pct: 0.95f), text: this.searchTerm);
-            
+
             ls.End();
             #endregion
 
             #region leftRect
-            Rect leftRect = inRect.BottomPart(pct: 0.45f).LeftPart(pct: 0.5f);
+
             GUI.BeginGroup(position: leftRect, style: new GUIStyle(other: GUI.skin.box));
             // get left list item
-            List<ThingDef> leftList = allApparel.Where(x=> !settings.eva.Contains(x))
-            .Where(x=> x.apparel.tags.Contains(DefValue.EvaTagName))
-            .Where(x=>  x.label.Contains(this.searchTerm))
+            List<ThingDef> leftList = allApparel.Where(x => !settings.eva.Contains(x))
+            .Where(x => x.label.Contains(this.searchTerm))
             .ToList();
 
-            float leftItemY = 3f;
+            float leftItemY_Position = 3f;
             Widgets.BeginScrollView(outRect: leftRect.AtZero(), scrollPosition: ref this.leftScrollPosition,
                                     viewRect: new Rect(x: 0f, y: 0f, width: leftRect.width / 10 * 9, height: leftList.Count * 32f));
             if (!leftList.NullOrEmpty())
             {
                 foreach (ThingDef def in leftList)
                 {
-                    Rect rowRect = new Rect(x: 5, y: leftItemY, width: leftRect.width - 6, height: 30);
+                    Rect rowRect = new Rect(x: 5, y: leftItemY_Position, width: leftRect.width - 6, height: 30);
                     Widgets.DrawHighlightIfMouseover(rect: rowRect);
                     if (def == this.leftSelectedItem)
                         Widgets.DrawHighlightSelected(rect: rowRect);
@@ -139,7 +155,7 @@ namespace EvaPatcher
                     if (Widgets.ButtonInvisible(butRect: rowRect))
                         this.leftSelectedItem = def;
 
-                    leftItemY += 32f;
+                    leftItemY_Position += 32f;
                 }
             }
 
@@ -148,10 +164,53 @@ namespace EvaPatcher
             #endregion
 
             #region rightRect
-            Rect rightRect = inRect.BottomPart(pct: 0.45f).RightPart(pct: 0.5f);
+
             GUI.BeginGroup(position: rightRect, style: new GUIStyle(other: GUI.skin.box));
+            float rightItemY_Position = 3f;
+            Widgets.BeginScrollView(outRect: rightRect.AtZero(), scrollPosition: ref this.rightScrollPosition,
+                                    viewRect: new Rect(x: 0f, y: 0f, width: rightRect.width / 10 * 9, height: settings.eva.Count * 32f));
+            if (!settings.eva.NullOrEmpty())
+            {
+                foreach (ThingDef def in settings.eva)
+                {
+                    Rect rowRect = new Rect(x: 5, y: rightItemY_Position, width: rightRect.width - 6, height: 30);
+                    Widgets.DrawHighlightIfMouseover(rect: rowRect);
+                    if (def == this.rightSelectedItem)
+                        Widgets.DrawHighlightSelected(rect: rowRect);
+                    Widgets.Label(rect: rowRect, label: def.LabelCap.RawText ?? def.defName);
+                    if (Widgets.ButtonInvisible(butRect: rowRect))
+                        this.rightSelectedItem = def;
+
+                    rightItemY_Position += 32f;
+                }
+            }
 
             GUI.EndGroup();
+            #endregion
+
+            #region buttons
+            #region buttons
+
+            if (Widgets.ButtonImage(butRect: bottomRect.BottomPart(pct: 0.6f).TopPart(pct: 0.1f).RightPart(pct: 0.525f).LeftPart(pct: 0.1f), tex: TexUI.ArrowTexRight) &&
+                this.leftSelectedItem != null)
+            {
+                settings.eva.Add(item: this.leftSelectedItem);
+                settings.eva = settings.eva.OrderBy(keySelector: td => td.LabelCap.RawText ?? td.defName).ToList();
+                this.rightSelectedItem = this.leftSelectedItem;
+                this.leftSelectedItem = null;
+                // TODO MinifyEverything.RemoveMinifiedFor(def: this.rightSelectedDef);
+            }
+
+            if (Widgets.ButtonImage(butRect: bottomRect.BottomPart(pct: 0.4f).TopPart(pct: 0.15f).RightPart(pct: 0.525f).LeftPart(pct: 0.1f), tex: TexUI.ArrowTexLeft) &&
+                this.leftSelectedItem != null)
+            {
+                settings.eva.Remove(item: this.rightSelectedItem);
+                this.leftSelectedItem = this.rightSelectedItem;
+                this.rightSelectedItem = null;
+                // TODO MinifyEverything.AddMinifiedFor(def: this.leftSelectedDef);
+            }
+
+            #endregion
             #endregion
 
             settings.Write();
@@ -167,37 +226,87 @@ namespace EvaPatcher
 
             // *Uncomment for Harmony*
             Harmony harmony = new Harmony("rimworld.nightz.sos2EvaPatcher");
-            // harmony.Patch(original: AccessTools.Method(type: typeof(Apparel),name: ApparelUtility.), prefix: null, postfix: new HarmonyMethod(typeof(EvaPatcher).GetMethod("EvaApparelPostfix")));
-            // harmony.PatchAll( Assembly.GetExecutingAssembly() );
+            // patch apparel def 
+            harmony.Patch(original: AccessTools.Method(type: typeof(ThingDef), name: nameof(ThingDef.PostLoad)),
+                prefix: null, postfix: new HarmonyMethod(typeof(EvaPatcher).GetMethod(nameof(EvaApparelPostfix))));
+
+        }
+
+        static void AddEvaPatchFor(ThingDef def)
+        {
+            // is armor
+            if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Torso))
+            {
+                if (def.statBases.Any(predicate: x => x.stat.defName == DefValue.StatsDecompressionResistance))
+                {
+                    def.statBases.First(predicate: x => x.stat.defName == DefValue.StatsDecompressionResistance).value = 
+                        DefValue.ValueDecompressionResistanceArmor;
+                }
+                else
+                {
+                    var sm = new StatModifier
+                    {
+                        stat = ResourceBank.StatDefOf.DecompressionResistanceOffset,
+                        value = DefValue.ValueDecompressionResistanceArmor
+                    };
+                    def.statBases.Add(sm);
+                }
+                // TODO
+
+
+            }
+            // is helmet
+            else if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.FullHead) || def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.UpperHead))
+            {
+
+            }
+            // is other
+            else
+            {
+
+            }
+        }
+
+        static void RemoveEvaPatchFor(ThingDef def)
+        {
+            // is armor
+            if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Torso))
+            {
+
+
+            }
+            // is helmet
+            else if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.FullHead) || def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.UpperHead))
+            {
+
+            }
+            // is other
+            else
+            {
+
+            }
+        }
+
+        static void EvaApparelPostfix(ThingDef th)
+        {
+
+            if (Sos2EvaPatchMod.settings.enabled)
+            {
+                // is apparel and in defName in settings eva
+                if (th.IsApparel && Sos2EvaPatchMod.settings.eva.Any(predicate: x => x.defName == th.defName))
+                {
+                    AddEvaPatchFor(th);
+                }
+                else if (th.IsApparel && Sos2EvaPatchMod.settings.patchEvaTag && th.apparel.tags.Contains(DefValue.EvaTagName))
+                {
+                    AddEvaPatchFor(th);
+                }
+            }
+
+
+
         }
     }
-    // [DefOf]
-    // public class TemplateDefOf
-    // {
-    //     public static LetterDef success_letter;
-    // }
 
-    // public class MyMapComponent : MapComponent
-    // {
-    //     public MyMapComponent(Map map) : base(map) { }
-    //     public override void FinalizeInit()
-    //     {
-    //         Messages.Message("Success", null, MessageTypeDefOf.PositiveEvent);
-    //         Find.LetterStack.ReceiveLetter(new TaggedString("Success"), new TaggedString("Success message"), TemplateDefOf.success_letter, "", 0);
-    //     }
-    // }
-
-
-    // *Uncomment for Harmony*
-    // [HarmonyPatch(typeof(LetterStack), "ReceiveLetter")]
-    // [HarmonyPatch(new Type[] {typeof(TaggedString), typeof(TaggedString), typeof(LetterDef), typeof(string), typeof(int), typeof(bool)})]
-    // public static class LetterTextChange
-    // {
-    //     public static bool Prefix(ref TaggedString text)
-    //     {
-    //         text += new TaggedString(" with harmony");
-    //         return true;
-    //     }
-    // }
 
 }

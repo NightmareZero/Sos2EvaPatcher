@@ -27,8 +27,13 @@
 			<Private>False</Private>
 		</Reference>
 
-		<!-- *Uncomment for Harmony*-->
+		<!-- Harmony-->
 		<Reference Include="../../../Mods/Harmony/Current/Assemblies/0Harmony.dll">
+			<Private>False</Private>
+		</Reference>
+
+		<!-- Save Our Ship 2 -->
+		<Reference Include="../../../Mods/SaveOurShip2Experimental/1.5/Assemblies/ShipsHaveInsides.dll">
 			<Private>False</Private>
 		</Reference>
 	</ItemGroup>
