@@ -302,7 +302,7 @@ namespace EvaPatcher
                 });
             }
             // is armor
-            if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Torso))
+            else if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Torso))
             {
 
                 DefValue.ArmorStat.ToList().ForEach(x =>
