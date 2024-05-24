@@ -104,7 +104,7 @@ namespace EvaPatcher
         public Sos2EvaPatchMod(ModContentPack content) : base(content)
         {
             settings = GetSettings<Sos2EvaPatchSettings>();
-            // Instance = this;
+            Instance = this;
         }
 
         public override string SettingsCategory() => "EvaPatcherGeneralSettings";
