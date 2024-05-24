@@ -64,19 +64,25 @@ namespace EvaPatcher
         public override void ExposeData()
         {
             base.ExposeData();
+
+            // load config
+            List<string> evaName = this.eva?.Select(selector: td => td.defName).ToList() ?? new List<string>();
+            Scribe_Collections.Look(list: ref evaName, label: "EvaPatchedList");
+            Scribe_Values.Look(value: ref inited, label: "EvaPatchedInited", defaultValue: false);
+            Scribe_Values.Look(value: ref enabled, label: "EvaPatchedEnabled", defaultValue: false);
+            Scribe_Values.Look(value: ref patchEvaTag, label: "EvaPatchedPatchEvaTag", defaultValue: false);
+            this.eva = evaName.Select(selector: DefDatabase<ThingDef>.GetNamedSilentFail).Where(predicate: td => td != null).ToList();
+
+            // FIXME: eva lost after game reload
             if (!this.inited)
             {
                 this.InitData();
             }
-            List<string> list = this.eva?.Select(selector: td => td.defName).ToList() ?? new List<string>();
-            // load config
-            Scribe_Collections.Look(list: ref list, label: "EvaPatchedList");
-            Scribe_Values.Look(value: ref inited, label: "EvaPatchedInited", defaultValue: false);
-            this.eva = list.Select(selector: DefDatabase<ThingDef>.GetNamedSilentFail).Where(predicate: td => td != null).ToList();
         }
 
         public void InitData()
         {
+            Log.Message("EvaPatcher: InitData");
             this.inited = true;
             this.enabled = false;
             this.patchEvaTag = false;
@@ -84,11 +90,12 @@ namespace EvaPatcher
         }
     }
 
+    [StaticConstructorOnStartup]
     internal class Sos2EvaPatchMod : Mod
     {
         #region variables
         public static Sos2EvaPatchSettings settings;
-        public static Sos2EvaPatchMod Instance;
+        public static Sos2EvaPatchMod Instance { get; private set; }
         #endregion
 
         #region ui components
@@ -107,7 +114,7 @@ namespace EvaPatcher
             Instance = this;
         }
 
-        public override string SettingsCategory() => "EvaPatcherGeneralSettings";
+        public override string SettingsCategory() => "EvaPatcher.Name".Translate();
 
         public override void DoSettingsWindowContents(Rect inRect)
         {
@@ -116,24 +123,21 @@ namespace EvaPatcher
 
             List<ThingDef> allApparel = GetAllArmorAndHelmet();
 
-            Rect topRect = inRect.TopPart(pct: 0.05f);
-            Rect leftRect = inRect.BottomPart(pct: 0.45f).LeftPart(pct: 0.5f);
+            Rect topRect = inRect.TopPart(pct: 0.2f);
+            Rect leftRect = inRect.BottomPart(pct: 0.79f).LeftPart(pct: 0.45f);
             Rect bottomRect = inRect.BottomPart(pct: 0.9f);
-            Rect rightRect = inRect.BottomPart(pct: 0.45f).RightPart(pct: 0.5f);
+            Rect rightRect = inRect.BottomPart(pct: 0.79f).RightPart(pct: 0.45f);
 
             #region topRect
             Listing_Standard ls = new Listing_Standard();
             ls.Begin(topRect);
-            ls.Label("EvaPatcherGeneralSettings".Translate());
-            ls.GapLine(20f);
+            // ls.GapLine();
             // enable eva patcher
-            ls.Label("EnableEvaPatcher".Translate());
-            ls.CheckboxLabeled("EnableEvaPatcher".Translate(), ref settings.enabled, "EnableEvaPatcher".Translate());
+            ls.CheckboxLabeled("EvaPatcher.Enable".Translate(), ref settings.enabled, "EvaPatcher.Enable.Desc".Translate());
             // set all appearel has eva tag to eva suit
-            ls.Label("UseEvatag".Translate());
-            ls.CheckboxLabeled("UseEvatag".Translate(), ref settings.enabled, "UseEvatag".Translate());
-            ls.GapLine(20f);
-            this.searchTerm = Widgets.TextField(rect: topRect.RightPart(pct: 0.95f).LeftPart(pct: 0.95f), text: this.searchTerm);
+            ls.CheckboxLabeled("EvaPatcher.Evatag".Translate(), ref settings.patchEvaTag, "EvaPatcher.EvaTag.Desc".Translate());
+            ls.GapLine();
+            // this.searchTerm = Widgets.TextField(rect: topRect.RightPart(pct: 0.95f).LeftPart(pct: 0.95f), text: this.searchTerm);
 
             ls.End();
             #endregion
@@ -190,11 +194,11 @@ namespace EvaPatcher
                     rightItemY_Position += 32f;
                 }
             }
+            Widgets.EndScrollView();
 
             GUI.EndGroup();
             #endregion
 
-            #region buttons
             #region buttons
 
             if (Widgets.ButtonImage(butRect: bottomRect.BottomPart(pct: 0.6f).TopPart(pct: 0.1f).RightPart(pct: 0.525f).LeftPart(pct: 0.1f), tex: TexUI.ArrowTexRight) &&
@@ -204,22 +208,24 @@ namespace EvaPatcher
                 settings.eva = settings.eva.OrderBy(keySelector: td => td.LabelCap.RawText ?? td.defName).ToList();
                 this.rightSelectedItem = this.leftSelectedItem;
                 this.leftSelectedItem = null;
+                EvaPatcher.AddEvaPatchFor(def: this.rightSelectedItem);
                 // TODO MinifyEverything.RemoveMinifiedFor(def: this.rightSelectedDef);
             }
 
             if (Widgets.ButtonImage(butRect: bottomRect.BottomPart(pct: 0.4f).TopPart(pct: 0.15f).RightPart(pct: 0.525f).LeftPart(pct: 0.1f), tex: TexUI.ArrowTexLeft) &&
-                this.leftSelectedItem != null)
+                this.rightSelectedItem != null)
             {
                 settings.eva.Remove(item: this.rightSelectedItem);
                 this.leftSelectedItem = this.rightSelectedItem;
                 this.rightSelectedItem = null;
+                EvaPatcher.RemoveEvaPatchFor(def: this.leftSelectedItem);
                 // TODO MinifyEverything.AddMinifiedFor(def: this.leftSelectedDef);
             }
 
             #endregion
-            #endregion
 
             settings.Write();
+            base.DoSettingsWindowContents(inRect);
         }
 
         private static List<ThingDef> GetAllArmorAndHelmet()
@@ -242,15 +248,27 @@ namespace EvaPatcher
         {
             Log.Message("Mod template loaded successfully!");
 
+            // add patch after all thingdef loaded
+            LongEventHandler.ExecuteWhenFinished(action: () =>
+            {
+                if (Sos2EvaPatchMod.settings.enabled)
+                {
+                    DefDatabase<ThingDef>.AllDefs.Where(predicate: x => x.IsApparel)
+                    .ToList().ForEach(action: x => EvaApparelPostfix(x));
+
+                    Log.Message("EvaPatcher: Patched all apparel");
+                }
+            });
+
             // *Uncomment for Harmony*
-            Harmony harmony = new Harmony("rimworld.nightz.sos2EvaPatcher");
+            // Harmony harmony = new Harmony("rimworld.nightz.sos2EvaPatcher");
             // patch apparel def 
-            harmony.Patch(original: AccessTools.Method(type: typeof(ThingDef), name: nameof(ThingDef.PostLoad)),
-                prefix: null, postfix: new HarmonyMethod(typeof(EvaPatcher).GetMethod(nameof(EvaApparelPostfix))));
+            // harmony.Patch(original: AccessTools.Method(type: typeof(ThingDef), name: nameof(ThingDef.PostLoad)),
+            //     prefix: null, postfix: new HarmonyMethod(typeof(EvaPatcher).GetMethod(nameof(EvaApparelPostfix))));
 
         }
 
-        static void AddEvaPatchFor(ThingDef def)
+        public static void AddEvaPatchFor(ThingDef def)
         {
             // is armor
             if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Torso))
@@ -301,7 +319,7 @@ namespace EvaPatcher
             }
         }
 
-        static void RemoveEvaPatchFor(ThingDef def)
+        public static void RemoveEvaPatchFor(ThingDef def)
         {
             // is armor
             if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Torso))
@@ -333,13 +351,14 @@ namespace EvaPatcher
             }
         }
 
-        static void EvaApparelPostfix(ThingDef th)
+        public static void EvaApparelPostfix(ThingDef th)
         {
             if (Sos2EvaPatchMod.settings.enabled && th.IsApparel)
             {
                 if (Sos2EvaPatchMod.settings.eva.Any(predicate: x => x.defName == th.defName) ||
                     (Sos2EvaPatchMod.settings.patchEvaTag && th.apparel.tags.Contains(DefValue.EvaTagName)))
                 {
+                    Log.Message("EvaPatcher: Patching " + th.defName +":"+ th.label + " to EVA suit");
                     AddEvaPatchFor(th);
                 }
             }

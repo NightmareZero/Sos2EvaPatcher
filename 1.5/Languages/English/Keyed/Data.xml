@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<LanguageData>
+    <EvaPatcher.Name>Eva Patcher</EvaPatcher.Name>
+    <EvaPatcher.Enable>Enable Patcher</EvaPatcher.Enable>
+    <EvaPatcher.Enable.Desc>Enable/Disable Sos2 Eva Patcher</EvaPatcher.Enable.Desc>
+    <EvaPatcher.Evatag>Patch all "EVA" tag</EvaPatcher.Evatag>
+    <EvaPatcher.EvaTag.Desc>Patch all helmet and armor with "EVA" tag as EVA suit</EvaPatcher.EvaTag.Desc>
+</LanguageData>

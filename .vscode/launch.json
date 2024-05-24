@@ -9,7 +9,7 @@
             "type": "clr",
             "request": "launch",
             "preLaunchTask": "build dll",
-            "args": [],
+            "args": ["-savedatafolder=../../Save"],
             "program": "../../RimWorldWin64.exe",
             "cwd": "${workspaceFolder}",
             "console": "internalConsole",

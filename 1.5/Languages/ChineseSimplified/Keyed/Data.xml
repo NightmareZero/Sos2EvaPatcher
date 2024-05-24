@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<LanguageData>
+    <EvaPatcher.Name>太空服设置</EvaPatcher.Name>
+    <EvaPatcher.Enable>启用太空服处理</EvaPatcher.Enable>
+    <EvaPatcher.Enable.Desc>启用/禁用太空服处理</EvaPatcher.Enable.Desc>
+    <EvaPatcher.Evatag>处理Eva标签</EvaPatcher.Evatag>
+    <EvaPatcher.EvaTag.Desc>将Tag中带有"EVA"的衣服/头盔设置为太空服</EvaPatcher.EvaTag.Desc>
+</LanguageData>
