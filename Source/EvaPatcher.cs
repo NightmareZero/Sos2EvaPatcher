@@ -335,22 +335,14 @@ namespace EvaPatcher
 
         static void EvaApparelPostfix(ThingDef th)
         {
-
-            if (Sos2EvaPatchMod.settings.enabled)
+            if (Sos2EvaPatchMod.settings.enabled && th.IsApparel)
             {
-                // is apparel and in defName in settings eva
-                if (th.IsApparel && Sos2EvaPatchMod.settings.eva.Any(predicate: x => x.defName == th.defName))
-                {
-                    AddEvaPatchFor(th);
-                }
-                else if (th.IsApparel && Sos2EvaPatchMod.settings.patchEvaTag && th.apparel.tags.Contains(DefValue.EvaTagName))
+                if (Sos2EvaPatchMod.settings.eva.Any(predicate: x => x.defName == th.defName) ||
+                    (Sos2EvaPatchMod.settings.patchEvaTag && th.apparel.tags.Contains(DefValue.EvaTagName)))
                 {
                     AddEvaPatchFor(th);
                 }
             }
-
-
-
         }
     }
 
