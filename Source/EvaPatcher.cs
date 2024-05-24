@@ -31,6 +31,18 @@ namespace EvaPatcher
         internal const String StatsVacuumSpeedMultiplier = "VacuumSpeedMultiplier";
         internal const String StatsHypoxiaResistance = "HypoxiaResistance";
 
+        internal static Dictionary<StatDef, float> ArmorStat = new Dictionary<StatDef, float>
+        {
+            { ResourceBank.StatDefOf.DecompressionResistanceOffset, 0.75f },
+            { ResourceBank.StatDefOf.VacuumSpeedMultiplier, 4f },
+        };
+
+        internal static Dictionary<StatDef, float> HelmetStat = new Dictionary<StatDef, float>
+        {
+            { ResourceBank.StatDefOf.DecompressionResistanceOffset, 0.25f },
+            { ResourceBank.StatDefOf.HypoxiaResistanceOffset, 1f },
+        };
+
     }
 
     internal class Sos2EvaPatchSettings : ModSettings
@@ -102,13 +114,7 @@ namespace EvaPatcher
             base.DoSettingsWindowContents(inRect: inRect);
             Text.Font = GameFont.Medium;
 
-            // get all apparel
-            List<ThingDef> allApparel = DefDatabase<ThingDef>.AllDefs.Where(predicate: x => x.IsApparel)
-            .Where(x =>
-            (x.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Torso) && x.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Legs)) ||
-             x.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.FullHead) ||
-              x.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.UpperHead))
-            .ToList();
+            List<ThingDef> allApparel = GetAllArmorAndHelmet();
 
             Rect topRect = inRect.TopPart(pct: 0.05f);
             Rect leftRect = inRect.BottomPart(pct: 0.45f).LeftPart(pct: 0.5f);
@@ -215,6 +221,18 @@ namespace EvaPatcher
 
             settings.Write();
         }
+
+        private static List<ThingDef> GetAllArmorAndHelmet()
+        {
+            // get all armor or helmet
+            return DefDatabase<ThingDef>.AllDefs.Where(predicate: x => x.IsApparel)
+            .Where(x =>
+            (x.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Torso) && x.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Legs)) ||
+             x.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.FullHead) ||
+              x.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.UpperHead))
+            .ToList();
+        }
+
     }
 
     [StaticConstructorOnStartup]
@@ -237,33 +255,49 @@ namespace EvaPatcher
             // is armor
             if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Torso))
             {
-                if (def.statBases.Any(predicate: x => x.stat.defName == DefValue.StatsDecompressionResistance))
+
+                DefValue.ArmorStat.ToList().ForEach(x =>
                 {
-                    def.statBases.First(predicate: x => x.stat.defName == DefValue.StatsDecompressionResistance).value = 
-                        DefValue.ValueDecompressionResistanceArmor;
-                }
-                else
-                {
-                    var sm = new StatModifier
+                    if (def.statBases.Any(predicate: y => y.stat.defName == x.Key.defName))
                     {
-                        stat = ResourceBank.StatDefOf.DecompressionResistanceOffset,
-                        value = DefValue.ValueDecompressionResistanceArmor
-                    };
-                    def.statBases.Add(sm);
-                }
-                // TODO
-
-
+                        def.statBases.First(predicate: y => y.stat == x.Key).value = x.Value;
+                    }
+                    else
+                    {
+                        var sm = new StatModifier
+                        {
+                            stat = x.Key,
+                            value = x.Value
+                        };
+                        def.statBases.Add(sm);
+                    }
+                });
             }
             // is helmet
             else if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.FullHead) || def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.UpperHead))
             {
-
+                DefValue.HelmetStat.ToList().ForEach(x =>
+                {
+                    if (def.statBases.Any(predicate: y => y.stat.defName == x.Key.defName))
+                    {
+                        def.statBases.First(predicate: y => y.stat == x.Key).value = x.Value;
+                    }
+                    else
+                    {
+                        var sm = new StatModifier
+                        {
+                            stat = x.Key,
+                            value = x.Value
+                        };
+                        def.statBases.Add(sm);
+                    }
+                });
             }
             // is other
             else
             {
-
+                // out put rimworld dev error log
+                Log.Error("EvaPatcher: " + def.defName + " is not armor or helmet");
             }
         }
 
@@ -272,13 +306,25 @@ namespace EvaPatcher
             // is armor
             if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Torso))
             {
-
+                DefValue.ArmorStat.ToList().ForEach(x =>
+                {
+                    if (def.statBases.Any(predicate: y => y.stat.defName == x.Key.defName))
+                    {
+                        def.statBases.Remove(item: def.statBases.First(predicate: y => y.stat == x.Key));
+                    }
+                });
 
             }
             // is helmet
             else if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.FullHead) || def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.UpperHead))
             {
-
+                DefValue.HelmetStat.ToList().ForEach(x =>
+                {
+                    if (def.statBases.Any(predicate: y => y.stat.defName == x.Key.defName))
+                    {
+                        def.statBases.Remove(item: def.statBases.First(predicate: y => y.stat == x.Key));
+                    }
+                });
             }
             // is other
             else
