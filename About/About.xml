@@ -29,6 +29,8 @@
 		<li>Ludeon.RimWorld.Biotech</li>
 		<li>Ludeon.RimWorld.Anomaly</li>
 		<li>kentington.saveourship2</li>
+		<li>MalteSchulze.RIMMSqol</li>
+		<li>void.charactereditor</li>
 	</loadAfter>
 	<incompatibleWith>
 		<!-- <li>username.modname</li> -->
