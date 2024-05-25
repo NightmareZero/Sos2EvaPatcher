@@ -129,9 +129,9 @@ namespace EvaPatcher
             List<ThingDef> evaApparel = allApparel.Where(x => settings.eva.Contains(x.defName)).ToList();
 
             Rect topRect = inRect.TopPart(pct: 0.2f);
-            Rect leftRect = inRect.BottomPart(pct: 0.79f).LeftPart(pct: 0.45f);
+            Rect leftRect = inRect.BottomPart(pct: 0.89f).LeftPart(pct: 0.45f);
             Rect bottomRect = inRect.BottomPart(pct: 0.9f);
-            Rect rightRect = inRect.BottomPart(pct: 0.79f).RightPart(pct: 0.45f);
+            Rect rightRect = inRect.BottomPart(pct: 0.89f).RightPart(pct: 0.45f);
 
             #region topRect
             Listing_Standard ls = new Listing_Standard();
