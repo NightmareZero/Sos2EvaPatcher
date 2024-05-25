@@ -17,7 +17,7 @@ using SaveOurShip2;
 
 // *Uncomment for Harmony*
 // using System.Reflection;
-using HarmonyLib;
+// using HarmonyLib;
 
 namespace EvaPatcher
 {
