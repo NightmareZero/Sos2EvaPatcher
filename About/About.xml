@@ -21,7 +21,15 @@
 			<downloadUrl>https://github.com/SonicTHI/SaveOurShip2Experimental/releases/latest</downloadUrl>
 		</li>
 	</modDependencies>
-
+	<loadAfter>
+		<li>brrainz.harmony</li>
+		<li>Ludeon.RimWorld</li>
+		<li>Ludeon.RimWorld.Royalty</li>
+		<li>Ludeon.RimWorld.Ideology</li>
+		<li>Ludeon.RimWorld.Biotech</li>
+		<li>Ludeon.RimWorld.Anomaly</li>
+		<li>kentington.saveourship2</li>
+	</loadAfter>
 	<incompatibleWith>
 		<!-- <li>username.modname</li> -->
 	</incompatibleWith>
