@@ -19,7 +19,7 @@
 
  	<ItemGroup>
 	 	<!-- Mod -->
-	 	<Compile Include="../Source/*" />
+	 	<Compile Include="./*.cs" />
 		<!-- <Compile Include="../Source/EvaPatcher.cs" /> -->
 		
 	 	<!-- Rimworld -->
