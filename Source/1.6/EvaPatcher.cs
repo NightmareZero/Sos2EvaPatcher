@@ -13,7 +13,6 @@ using Verse.Noise;
 using Verse.Grammar;
 using RimWorld;
 using RimWorld.Planet;
-using SaveOurShip2;
 
 // *Uncomment for Harmony*
 // using System.Reflection;
@@ -31,26 +30,61 @@ namespace EvaPatcher
         internal const String StatsVacuumSpeedMultiplier = "VacuumSpeedMultiplier";
         internal const String StatsHypoxiaResistance = "HypoxiaResistance";
 
-        internal static Dictionary<StatDef, float> ArmorStat = new Dictionary<StatDef, float>
+        // Base stats
+        internal static Dictionary<StatDef, float> ArmorStatBase = new Dictionary<StatDef, float>
         {
-            { ResourceBank.StatDefOf.DecompressionResistance, 0.75f },
-            { ResourceBank.StatDefOf.VacuumSpeedMultiplier, 4f },
-            { StatDefOf.Insulation_Cold, 100f}
+            { StatDefOf.Insulation_Cold, 75f }
         };
 
-        internal static Dictionary<StatDef, float> HelmetStat = new Dictionary<StatDef, float>
+        internal static Dictionary<StatDef, float> HelmetStatBase = new Dictionary<StatDef, float>
         {
-            { ResourceBank.StatDefOf.DecompressionResistance, 0.25f },
-            { ResourceBank.StatDefOf.HypoxiaResistance, 1f },
+            { StatDefOf.Insulation_Cold, 25f }
         };
 
-        internal static Dictionary<StatDef, float> EVAStat = new Dictionary<StatDef, float>
+        internal static Dictionary<StatDef, float> EVAStatBase = new Dictionary<StatDef, float>
         {
-            { ResourceBank.StatDefOf.DecompressionResistance, 1f },
-            { ResourceBank.StatDefOf.HypoxiaResistance, 1f },
-            { ResourceBank.StatDefOf.VacuumSpeedMultiplier, 4f },
-            { StatDefOf.Insulation_Cold, 100f}
+            { StatDefOf.Insulation_Cold, 100f }
         };
+
+        // 奥德赛
+        internal static Dictionary<StatDef, float> ArmorStatOdessey = new Dictionary<StatDef, float>
+        {
+            { StatDefOf.ToxicEnvironmentResistance, 0.25f },
+            { StatDefOf.VacuumResistance, 0.32f },
+        };
+
+        internal static Dictionary<StatDef, float> HelmetStatOdessey = new Dictionary<StatDef, float>
+        {
+            { StatDefOf.ToxicEnvironmentResistance, 0.75f },
+            { StatDefOf.VacuumResistance, 0.7f },
+        };
+
+        internal static Dictionary<StatDef, float> EVAStatOdessey = new Dictionary<StatDef, float>
+        {
+            { StatDefOf.ToxicEnvironmentResistance, 1f },
+            { StatDefOf.VacuumResistance, 1f },
+        };
+
+        // Save Our Ship 2
+        internal static Dictionary<StatDef, float> ArmorStatSos2 = new Dictionary<StatDef, float>
+                {
+                    { DefDatabase<StatDef>.GetNamed(StatsDecompressionResistance, true), 0.75f },
+                    { DefDatabase<StatDef>.GetNamed(StatsVacuumSpeedMultiplier, true), 4f },
+                };
+
+        internal static Dictionary<StatDef, float> HelmetStatSos2 = new Dictionary<StatDef, float>
+        {
+            { DefDatabase<StatDef>.GetNamed(StatsDecompressionResistance, true), 0.25f },
+            { DefDatabase<StatDef>.GetNamed(StatsHypoxiaResistance, true), 1f },
+        };
+
+        internal static Dictionary<StatDef, float> EVAStatSos2 = new Dictionary<StatDef, float>
+        {
+            { DefDatabase<StatDef>.GetNamed(StatsDecompressionResistance, true), 1f },
+            { DefDatabase<StatDef>.GetNamed(StatsHypoxiaResistance, true), 1f },
+            { DefDatabase<StatDef>.GetNamed(StatsVacuumSpeedMultiplier, true), 4f },
+        };
+
 
     }
 
@@ -292,7 +326,7 @@ namespace EvaPatcher
                 if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Torso) && def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Legs) &&
                     (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.FullHead) || def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.UpperHead)))
                 {
-                    DefValue.EVAStat.ToList().ForEach(x =>
+                    DefValue.EVAStatSos2.ToList().ForEach(x =>
                     {
 
                         if (def.equippedStatOffsets.Any(predicate: y => y.stat.defName == x.Key.defName))
@@ -315,7 +349,7 @@ namespace EvaPatcher
                 else if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Torso))
                 {
 
-                    DefValue.ArmorStat.ToList().ForEach(x =>
+                    DefValue.ArmorStatSos2.ToList().ForEach(x =>
                     {
                         if (def.equippedStatOffsets.Any(predicate: y => y.stat.defName == x.Key.defName))
                         {
@@ -335,7 +369,7 @@ namespace EvaPatcher
                 // is helmet
                 else if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.FullHead) || def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.UpperHead))
                 {
-                    DefValue.HelmetStat.ToList().ForEach(x =>
+                    DefValue.HelmetStatSos2.ToList().ForEach(x =>
                     {
                         if (def.equippedStatOffsets.Any(predicate: y => y.stat.defName == x.Key.defName))
                         {
@@ -374,7 +408,7 @@ namespace EvaPatcher
             // is armor
             if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Torso))
             {
-                DefValue.ArmorStat.ToList().ForEach(x =>
+                DefValue.ArmorStatSos2.ToList().ForEach(x =>
                 {
                     if (def.equippedStatOffsets.Any(predicate: y => y.stat.defName == x.Key.defName))
                     {
@@ -386,7 +420,7 @@ namespace EvaPatcher
             // is helmet
             else if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.FullHead) || def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.UpperHead))
             {
-                DefValue.HelmetStat.ToList().ForEach(x =>
+                DefValue.HelmetStatSos2.ToList().ForEach(x =>
                 {
                     if (def.equippedStatOffsets.Any(predicate: y => y.stat.defName == x.Key.defName))
                     {
