@@ -4,4 +4,4 @@ REM remove unnecessary assemblies
 DEL .\*\Assemblies\*.*
 
 REM build dll
-dotnet build Source/1.5/
+dotnet build Source/1.6/
