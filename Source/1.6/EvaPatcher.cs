@@ -22,70 +22,227 @@ namespace EvaPatcher
 {
     internal static class DefValue
     {
-        internal const String EvaTagName = "EVA";
-        internal const String StatsDecompressionResistance = "DecompressionResistance";
+        internal const string EvaTagName = "EVA";
+        internal const string StatsDecompressionResistance = "DecompressionResistance";
         internal const float ValueDecompressionResistanceArmor = 0.75f;
         internal const float ValueDecompressionResistanceHelmet = 0.25f;
         // internal const float Va
-        internal const String StatsVacuumSpeedMultiplier = "VacuumSpeedMultiplier";
-        internal const String StatsHypoxiaResistance = "HypoxiaResistance";
+        internal const string StatsVacuumSpeedMultiplier = "VacuumSpeedMultiplier";
+        internal const string StatsHypoxiaResistance = "HypoxiaResistance";
+
+        internal static Dictionary<StatDef, float> ArmorStatFinal = null;
+        internal static Dictionary<StatDef, float> HelmetStatFinal = null;
+        internal static Dictionary<StatDef, float> EVAStatFinal = null;
 
         // Base stats
-        internal static Dictionary<StatDef, float> ArmorStatBase = new Dictionary<StatDef, float>
+        internal static Dictionary<string, float> ArmorStatBase = new Dictionary<string, float>
         {
-            { StatDefOf.Insulation_Cold, 75f }
+            { "Insulation_Cold", 75f }
         };
 
-        internal static Dictionary<StatDef, float> HelmetStatBase = new Dictionary<StatDef, float>
+        internal static Dictionary<string, float> HelmetStatBase = new Dictionary<string, float>
         {
-            { StatDefOf.Insulation_Cold, 25f }
+            { "Insulation_Cold", 25f }
         };
 
-        internal static Dictionary<StatDef, float> EVAStatBase = new Dictionary<StatDef, float>
+        internal static Dictionary<string, float> EVAStatBase = new Dictionary<string, float>
         {
-            { StatDefOf.Insulation_Cold, 100f }
+            { "Insulation_Cold", 100f }
         };
 
         // 奥德赛
-        internal static Dictionary<StatDef, float> ArmorStatOdessey = new Dictionary<StatDef, float>
+        internal static Dictionary<string, float> ArmorStatOdessey = new Dictionary<string, float>
         {
-            { StatDefOf.ToxicEnvironmentResistance, 0.25f },
-            { StatDefOf.VacuumResistance, 0.32f },
+            { "ToxicEnvironmentResistance", 0.25f },
+            { "VacuumResistance", 0.32f },
         };
 
-        internal static Dictionary<StatDef, float> HelmetStatOdessey = new Dictionary<StatDef, float>
+        internal static Dictionary<string, float> HelmetStatOdessey = new Dictionary<string, float>
         {
-            { StatDefOf.ToxicEnvironmentResistance, 0.75f },
-            { StatDefOf.VacuumResistance, 0.7f },
+            { "ToxicEnvironmentResistance", 0.75f },
+            { "VacuumResistance", 0.7f },
         };
 
-        internal static Dictionary<StatDef, float> EVAStatOdessey = new Dictionary<StatDef, float>
+        internal static Dictionary<string, float> EVAStatOdessey = new Dictionary<string, float>
         {
-            { StatDefOf.ToxicEnvironmentResistance, 1f },
-            { StatDefOf.VacuumResistance, 1f },
+            { "ToxicEnvironmentResistance", 1f },
+            { "VacuumResistance", 1f },
         };
 
         // Save Our Ship 2
-        internal static Dictionary<StatDef, float> ArmorStatSos2 = new Dictionary<StatDef, float>
+        internal static Dictionary<string, float> ArmorStatSos2 = new Dictionary<string, float>
                 {
-                    { DefDatabase<StatDef>.GetNamed(StatsDecompressionResistance, true), 0.75f },
-                    { DefDatabase<StatDef>.GetNamed(StatsVacuumSpeedMultiplier, true), 4f },
+                    { "DecompressionResistance", 0.75f },
+                    { "VacuumSpeedMultiplier", 4f },
                 };
 
-        internal static Dictionary<StatDef, float> HelmetStatSos2 = new Dictionary<StatDef, float>
+        internal static Dictionary<string, float> HelmetStatSos2 = new Dictionary<string, float>
         {
-            { DefDatabase<StatDef>.GetNamed(StatsDecompressionResistance, true), 0.25f },
-            { DefDatabase<StatDef>.GetNamed(StatsHypoxiaResistance, true), 1f },
+            { "DecompressionResistance", 0.25f },
+            { "HypoxiaResistance", 1f },
         };
 
-        internal static Dictionary<StatDef, float> EVAStatSos2 = new Dictionary<StatDef, float>
+        internal static Dictionary<string, float> EVAStatSos2 = new Dictionary<string, float>
         {
-            { DefDatabase<StatDef>.GetNamed(StatsDecompressionResistance, true), 1f },
-            { DefDatabase<StatDef>.GetNamed(StatsHypoxiaResistance, true), 1f },
-            { DefDatabase<StatDef>.GetNamed(StatsVacuumSpeedMultiplier, true), 4f },
+            { "DecompressionResistance", 1f },
+            { "HypoxiaResistance", 1f },
+            { "VacuumSpeedMultiplier", 4f },
         };
 
 
+        public static void InitStats()
+        {
+            if (ArmorStatFinal == null)
+            {
+                ArmorStatFinal = new Dictionary<StatDef, float>();
+                foreach (var kvp in ArmorStatBase)
+                {
+                    StatDef target = DefDatabase<StatDef>.GetNamed(kvp.Key);
+                    if (target != null)
+                    {
+                        ArmorStatFinal.Add(target, kvp.Value);
+                    }
+                    else
+                    {
+                        Log.Warning($"EvaPatcher: StatDef not found for {kvp.Key}");
+                    }
+                }
+                if (IsOdesseyDlcEnabled())
+                {
+                    foreach (var kvp in ArmorStatOdessey)
+                    {
+                        StatDef target = DefDatabase<StatDef>.GetNamed(kvp.Key);
+                        if (target != null)
+                        {
+                            ArmorStatFinal[target] = kvp.Value;
+                        }
+                        else
+                        {
+                            Log.Warning($"EvaPatcher: StatDef not found for {kvp.Key}");
+                        }
+                    }
+                }
+                if (IsSos2ModEnabled())
+                {
+                    foreach (var kvp in ArmorStatSos2)
+                    {
+                        StatDef target = DefDatabase<StatDef>.GetNamed(kvp.Key);
+                        if (target != null)
+                        {
+                            ArmorStatFinal[target] = kvp.Value;
+                        }
+                        else
+                        {
+                            Log.Warning($"EvaPatcher: StatDef not found for {kvp.Key}");
+                        }
+                    }
+                }
+            }
+            if (HelmetStatFinal == null)
+            {
+                HelmetStatFinal = new Dictionary<StatDef, float>();
+                foreach (var kvp in HelmetStatBase)
+                {
+                    StatDef target = DefDatabase<StatDef>.GetNamed(kvp.Key);
+                    if (target != null)
+                    {
+                        HelmetStatFinal.Add(target, kvp.Value);
+                    }
+                    else
+                    {
+                        Log.Warning($"EvaPatcher: StatDef not found for {kvp.Key}");
+                    }
+                }
+                if (IsOdesseyDlcEnabled())
+                {
+                    foreach (var kvp in HelmetStatOdessey)
+                    {
+                        StatDef target = DefDatabase<StatDef>.GetNamed(kvp.Key);
+                        if (target != null)
+                        {
+                            HelmetStatFinal[target] = kvp.Value;
+                        }
+                        else
+                        {
+                            Log.Warning($"EvaPatcher: StatDef not found for {kvp.Key}");
+                        }
+                    }
+                }
+                if (IsSos2ModEnabled())
+                {
+                    foreach (var kvp in HelmetStatSos2)
+                    {
+                        StatDef target = DefDatabase<StatDef>.GetNamed(kvp.Key);
+                        if (target != null)
+                        {
+                            HelmetStatFinal[target] = kvp.Value;
+                        }
+                        else
+                        {
+                            Log.Warning($"EvaPatcher: StatDef not found for {kvp.Key}");
+                        }
+                    }
+                }
+            }
+            if (EVAStatFinal == null)
+            {
+                EVAStatFinal = new Dictionary<StatDef, float>();
+                foreach (var kvp in EVAStatBase)
+                {
+                    StatDef target = DefDatabase<StatDef>.GetNamed(kvp.Key);
+                    if (target != null)
+                    {
+                        EVAStatFinal.Add(target, kvp.Value);
+                    }
+                    else
+                    {
+                        Log.Warning($"EvaPatcher: StatDef not found for {kvp.Key}");
+                    }
+                }
+                if (IsOdesseyDlcEnabled())
+                {
+                    foreach (var kvp in EVAStatOdessey)
+                    {
+                        StatDef target = DefDatabase<StatDef>.GetNamed(kvp.Key);
+                        if (target != null)
+                        {
+                            EVAStatFinal[target] = kvp.Value;
+                        }
+                        else
+                        {
+                            Log.Warning($"EvaPatcher: StatDef not found for {kvp.Key}");
+                        }
+                    }
+                }
+                if (IsSos2ModEnabled())
+                {
+                    foreach (var kvp in EVAStatSos2)
+                    {
+                        StatDef target = DefDatabase<StatDef>.GetNamed(kvp.Key);
+                        if (target != null)
+                        {
+                            EVAStatFinal[target] = kvp.Value;
+                        }
+                        else
+                        {
+                            Log.Warning($"EvaPatcher: StatDef not found for {kvp.Key}");
+                        }
+                    }
+                }
+            }
+
+        }
+
+        public static bool IsSos2ModEnabled()
+        {
+            return ModLister.AllInstalledMods.Any(mod =>
+        mod.PackageId.ToString() == "kentington.saveourship2" && mod.Active);
+        }
+
+        public static bool IsOdesseyDlcEnabled()
+        {
+            return ModsConfig.OdysseyActive;
+        }
     }
 
     internal class Sos2EvaPatchSettings : ModSettings
@@ -101,7 +258,7 @@ namespace EvaPatcher
         // patch all apparel with eva tag to eva suit
         public bool patchEvaTag = false;
         // all patched eva suit
-        public List<String> eva = new List<String>();
+        public List<string> eva = new List<string>();
         #endregion
 
         public override void ExposeData()
@@ -126,7 +283,7 @@ namespace EvaPatcher
             this.inited = true;
             this.enabled = false;
             this.patchEvaTag = false;
-            this.eva = new List<String>();
+            this.eva = new List<string>();
         }
     }
 
@@ -164,10 +321,11 @@ namespace EvaPatcher
             List<ThingDef> allApparel = GetAllArmorAndHelmet();
             List<ThingDef> evaApparel = allApparel.Where(x => settings.eva.Contains(x.defName)).ToList();
 
-            Rect topRect = inRect.TopPart(pct: 0.2f);
-            Rect leftRect = inRect.BottomPart(pct: 0.89f).LeftPart(pct: 0.45f);
-            Rect bottomRect = inRect.BottomPart(pct: 0.9f);
-            Rect rightRect = inRect.BottomPart(pct: 0.89f).RightPart(pct: 0.45f);
+            Rect topRect = inRect.TopPart(0.25f);
+            float panelHeight = inRect.height - topRect.height;
+            Rect leftRect = new Rect(inRect.x, topRect.yMax, inRect.width * 0.45f, panelHeight);
+            Rect rightRect = new Rect(inRect.x + inRect.width * 0.55f, topRect.yMax, inRect.width * 0.45f, panelHeight);
+            Rect bottomRect = new Rect(inRect.x, topRect.yMax, inRect.width, panelHeight);
 
             #region topRect
             Listing_Standard ls = new Listing_Standard();
@@ -178,8 +336,9 @@ namespace EvaPatcher
             // set all appearel has eva tag to eva suit
             ls.CheckboxLabeled("EvaPatcher.Evatag".Translate(), ref settings.patchEvaTag, "EvaPatcher.EvaTag.Desc".Translate());
             ls.GapLine();
-            // this.searchTerm = Widgets.TextField(rect: topRect.RightPart(pct: 0.95f).LeftPart(pct: 0.95f), text: this.searchTerm);
-
+            // 搜索框放在topRect底部，使用Listing_Standard分配空间
+            Rect searchRect = ls.GetRect(28f);
+            this.searchTerm = Widgets.TextField(searchRect, this.searchTerm);
             ls.End();
             #endregion
 
@@ -316,6 +475,7 @@ namespace EvaPatcher
 
         public static void AddEvaPatchFor(ThingDef def)
         {
+            DefValue.InitStats();
             try
             {
                 if (def.equippedStatOffsets == null)
@@ -326,19 +486,19 @@ namespace EvaPatcher
                 if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Torso) && def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Legs) &&
                     (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.FullHead) || def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.UpperHead)))
                 {
-                    AddStatModifiersWithDlcAndMod(def, DefValue.EVAStatBase, DefValue.EVAStatOdessey, DefValue.EVAStatSos2);
+                    AddStatModifiers(def, DefValue.EVAStatFinal);
                 }
-        
-                
+
+
                 // is armor
                 else if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Torso))
                 {
-                    AddStatModifiersWithDlcAndMod(def, DefValue.ArmorStatBase, DefValue.ArmorStatOdessey, DefValue.EVAStatSos2);
+                    AddStatModifiers(def, DefValue.ArmorStatFinal);
                 }
                 // is helmet
                 else if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.FullHead) || def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.UpperHead))
                 {
-                    AddStatModifiersWithDlcAndMod(def, DefValue.HelmetStatBase, DefValue.HelmetStatOdessey, DefValue.HelmetStatSos2);
+                    AddStatModifiers(def, DefValue.HelmetStatFinal);
                 }
                 // is other
                 else
@@ -355,6 +515,7 @@ namespace EvaPatcher
 
         public static void RemoveEvaPatchFor(ThingDef def)
         {
+            DefValue.InitStats();
             if (def.equippedStatOffsets == null)
             {
                 return;
@@ -363,86 +524,47 @@ namespace EvaPatcher
             if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Torso) && def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Legs) &&
                     (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.FullHead) || def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.UpperHead)))
             {
-                DefValue.EVAStatSos2.ToList().ForEach(x =>
-                {
-                    if (def.equippedStatOffsets.Any(predicate: y => y.stat.defName == x.Key.defName))
-                    {
-                        def.equippedStatOffsets.Remove(item: def.equippedStatOffsets.First(predicate: y => y.stat == x.Key));
-                    }
-                });
+                DelStatModifiers(def, DefValue.EVAStatFinal);
             }
             // remove armor stats
             else if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Torso))
             {
-                DefValue.ArmorStatSos2.ToList().ForEach(x =>
-                {
-                    if (def.equippedStatOffsets.Any(predicate: y => y.stat.defName == x.Key.defName))
-                    {
-                        def.equippedStatOffsets.Remove(item: def.equippedStatOffsets.First(predicate: y => y.stat == x.Key));
-                    }
-                });
+                DelStatModifiers(def, DefValue.ArmorStatFinal);
             }
             // remove helmet stats
             else if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.FullHead) || def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.UpperHead))
             {
-                DefValue.HelmetStatSos2.ToList().ForEach(x =>
-                {
-                    if (def.equippedStatOffsets.Any(predicate: y => y.stat.defName == x.Key.defName))
-                    {
-                        def.equippedStatOffsets.Remove(item: def.equippedStatOffsets.First(predicate: y => y.stat == x.Key));
-                    }
-                });
+                DelStatModifiers(def, DefValue.HelmetStatFinal);
             }
         }
 
         /// <summary>
         /// 依次应用基础、DLC、MOD三组StatModifier，自动判断DLC和MOD是否启用。
         /// </summary>
-        public static void AddStatModifiersWithDlcAndMod(ThingDef def, Dictionary<StatDef, float> baseStats, Dictionary<StatDef, float> dlcStats, Dictionary<StatDef, float> modStats)
+        public static void AddStatModifiers(ThingDef def, Dictionary<StatDef, float> stats)
         {
             // 基础
-            foreach (var x in baseStats)
+            foreach (var x in stats)
             {
                 if (def.equippedStatOffsets.Any(y => y.stat.defName == x.Key.defName))
                     def.equippedStatOffsets.First(y => y.stat == x.Key).value = x.Value;
                 else
                     def.equippedStatOffsets.Add(new StatModifier { stat = x.Key, value = x.Value });
             }
-            // DLC
-            if (IsOdesseyDlcEnabled())
-            {
-                foreach (var x in dlcStats)
-                {
-                    if (def.equippedStatOffsets.Any(y => y.stat.defName == x.Key.defName))
-                        def.equippedStatOffsets.First(y => y.stat == x.Key).value = x.Value;
-                    else
-                        def.equippedStatOffsets.Add(new StatModifier { stat = x.Key, value = x.Value });
-                }
-            }
-            // MOD
-            if (IsSos2ModEnabled())
-            {
-                foreach (var x in modStats)
-                {
-                    if (def.equippedStatOffsets.Any(y => y.stat.defName == x.Key.defName))
-                        def.equippedStatOffsets.First(y => y.stat == x.Key).value = x.Value;
-                    else
-                        def.equippedStatOffsets.Add(new StatModifier { stat = x.Key, value = x.Value });
-                }
-            }
+
         }
 
-        public static void DelStatModifiersWithCondition(ThingDef def,  Dictionary<StatDef, float> baseStats, Dictionary<StatDef, float> dlcStats, Dictionary<StatDef, float> modStats)
+        public static void DelStatModifiers(ThingDef def, Dictionary<StatDef, float> stats)
         {
             if (def.equippedStatOffsets == null)
             {
                 return;
             }
-            foreach (var statDef in baseStats.Keys.Concat(dlcStats.Keys).Concat(modStats.Keys))
+            foreach (var statDef in stats)
             {
-                if (def.equippedStatOffsets.Any(predicate: x => x.stat.defName == statDef.defName))
+                if (def.equippedStatOffsets.Any(predicate: x => x.stat.defName == statDef.Key.defName))
                 {
-                    def.equippedStatOffsets.Remove(item: def.equippedStatOffsets.First(predicate: x => x.stat == statDef));
+                    def.equippedStatOffsets.Remove(item: def.equippedStatOffsets.First(predicate: x => x.stat == statDef.Key));
                 }
             }
         }
@@ -460,16 +582,7 @@ namespace EvaPatcher
             }
         }
 
-        public static bool IsSos2ModEnabled()
-        {
-            return ModLister.AllInstalledMods.Any(mod =>
-        mod.PackageId.ToString() == "kentington.saveourship2" && mod.Active);
-        }
 
-        public static bool IsOdesseyDlcEnabled()
-        {
-            return ModsConfig.OdysseyActive;
-        }
 
     }
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ModMetaData>
 	<packageId>nightz.sos2evapatcher</packageId>
-	<name>Sos2 Eva Patcher</name>
+	<name>Odessey/Sos2 Eva Patcher</name>
 	<author>nightz</author>
 	<supportedVersions>
 		<li>1.5</li>
