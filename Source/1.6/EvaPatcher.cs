@@ -326,65 +326,19 @@ namespace EvaPatcher
                 if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Torso) && def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Legs) &&
                     (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.FullHead) || def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.UpperHead)))
                 {
-                    DefValue.EVAStatSos2.ToList().ForEach(x =>
-                    {
-
-                        if (def.equippedStatOffsets.Any(predicate: y => y.stat.defName == x.Key.defName))
-                        {
-                            def.equippedStatOffsets.First(predicate: y => y.stat == x.Key).value = x.Value;
-                        }
-                        else
-                        {
-                            var sm = new StatModifier
-                            {
-                                stat = x.Key,
-                                value = x.Value
-                            };
-                            def.equippedStatOffsets.Add(sm);
-                        }
-
-                    });
+                    AddStatModifiersWithDlcAndMod(def, DefValue.EVAStatBase, DefValue.EVAStatOdessey, DefValue.EVAStatSos2);
                 }
+        
+                
                 // is armor
                 else if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Torso))
                 {
-
-                    DefValue.ArmorStatSos2.ToList().ForEach(x =>
-                    {
-                        if (def.equippedStatOffsets.Any(predicate: y => y.stat.defName == x.Key.defName))
-                        {
-                            def.equippedStatOffsets.First(predicate: y => y.stat == x.Key).value = x.Value;
-                        }
-                        else
-                        {
-                            var sm = new StatModifier
-                            {
-                                stat = x.Key,
-                                value = x.Value
-                            };
-                            def.equippedStatOffsets.Add(sm);
-                        }
-                    });
+                    AddStatModifiersWithDlcAndMod(def, DefValue.ArmorStatBase, DefValue.ArmorStatOdessey, DefValue.EVAStatSos2);
                 }
                 // is helmet
                 else if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.FullHead) || def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.UpperHead))
                 {
-                    DefValue.HelmetStatSos2.ToList().ForEach(x =>
-                    {
-                        if (def.equippedStatOffsets.Any(predicate: y => y.stat.defName == x.Key.defName))
-                        {
-                            def.equippedStatOffsets.First(predicate: y => y.stat == x.Key).value = x.Value;
-                        }
-                        else
-                        {
-                            var sm = new StatModifier
-                            {
-                                stat = x.Key,
-                                value = x.Value
-                            };
-                            def.equippedStatOffsets.Add(sm);
-                        }
-                    });
+                    AddStatModifiersWithDlcAndMod(def, DefValue.HelmetStatBase, DefValue.HelmetStatOdessey, DefValue.HelmetStatSos2);
                 }
                 // is other
                 else
@@ -405,8 +359,20 @@ namespace EvaPatcher
             {
                 return;
             }
-            // is armor
-            if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Torso))
+            // remove all eva patch stats
+            if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Torso) && def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Legs) &&
+                    (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.FullHead) || def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.UpperHead)))
+            {
+                DefValue.EVAStatSos2.ToList().ForEach(x =>
+                {
+                    if (def.equippedStatOffsets.Any(predicate: y => y.stat.defName == x.Key.defName))
+                    {
+                        def.equippedStatOffsets.Remove(item: def.equippedStatOffsets.First(predicate: y => y.stat == x.Key));
+                    }
+                });
+            }
+            // remove armor stats
+            else if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.Torso))
             {
                 DefValue.ArmorStatSos2.ToList().ForEach(x =>
                 {
@@ -415,9 +381,8 @@ namespace EvaPatcher
                         def.equippedStatOffsets.Remove(item: def.equippedStatOffsets.First(predicate: y => y.stat == x.Key));
                     }
                 });
-
             }
-            // is helmet
+            // remove helmet stats
             else if (def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.FullHead) || def.apparel.bodyPartGroups.Contains(BodyPartGroupDefOf.UpperHead))
             {
                 DefValue.HelmetStatSos2.ToList().ForEach(x =>
@@ -428,10 +393,57 @@ namespace EvaPatcher
                     }
                 });
             }
-            // is other
-            else
-            {
+        }
 
+        /// <summary>
+        /// 依次应用基础、DLC、MOD三组StatModifier，自动判断DLC和MOD是否启用。
+        /// </summary>
+        public static void AddStatModifiersWithDlcAndMod(ThingDef def, Dictionary<StatDef, float> baseStats, Dictionary<StatDef, float> dlcStats, Dictionary<StatDef, float> modStats)
+        {
+            // 基础
+            foreach (var x in baseStats)
+            {
+                if (def.equippedStatOffsets.Any(y => y.stat.defName == x.Key.defName))
+                    def.equippedStatOffsets.First(y => y.stat == x.Key).value = x.Value;
+                else
+                    def.equippedStatOffsets.Add(new StatModifier { stat = x.Key, value = x.Value });
+            }
+            // DLC
+            if (IsOdesseyDlcEnabled())
+            {
+                foreach (var x in dlcStats)
+                {
+                    if (def.equippedStatOffsets.Any(y => y.stat.defName == x.Key.defName))
+                        def.equippedStatOffsets.First(y => y.stat == x.Key).value = x.Value;
+                    else
+                        def.equippedStatOffsets.Add(new StatModifier { stat = x.Key, value = x.Value });
+                }
+            }
+            // MOD
+            if (IsSos2ModEnabled())
+            {
+                foreach (var x in modStats)
+                {
+                    if (def.equippedStatOffsets.Any(y => y.stat.defName == x.Key.defName))
+                        def.equippedStatOffsets.First(y => y.stat == x.Key).value = x.Value;
+                    else
+                        def.equippedStatOffsets.Add(new StatModifier { stat = x.Key, value = x.Value });
+                }
+            }
+        }
+
+        public static void DelStatModifiersWithCondition(ThingDef def,  Dictionary<StatDef, float> baseStats, Dictionary<StatDef, float> dlcStats, Dictionary<StatDef, float> modStats)
+        {
+            if (def.equippedStatOffsets == null)
+            {
+                return;
+            }
+            foreach (var statDef in baseStats.Keys.Concat(dlcStats.Keys).Concat(modStats.Keys))
+            {
+                if (def.equippedStatOffsets.Any(predicate: x => x.stat.defName == statDef.defName))
+                {
+                    def.equippedStatOffsets.Remove(item: def.equippedStatOffsets.First(predicate: x => x.stat == statDef));
+                }
             }
         }
 
@@ -447,7 +459,17 @@ namespace EvaPatcher
                 }
             }
         }
+
+        public static bool IsSos2ModEnabled()
+        {
+            return ModLister.AllInstalledMods.Any(mod =>
+        mod.PackageId.ToString() == "kentington.saveourship2" && mod.Active);
+        }
+
+        public static bool IsOdesseyDlcEnabled()
+        {
+            return ModsConfig.OdysseyActive;
+        }
+
     }
-
-
 }
