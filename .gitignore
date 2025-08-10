@@ -1,4 +1,5 @@
-/.vscode/obj
+/Source/1.5/obj
+/Source/1.6/obj
 /*.sln
 
 # /*/Assemblies
