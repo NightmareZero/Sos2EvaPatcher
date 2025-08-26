@@ -92,6 +92,14 @@ namespace EvaPatcher
 
         public static void InitStats()
         {
+            if (IsOdesseyDlcEnabled())
+            { 
+                Log.Message("EvaPatcher: Odyssey DLC detected, applying Odyssey stats.");
+            }
+            if (IsSos2ModEnabled())
+            {
+                Log.Message("EvaPatcher: Save Our Ship 2 mod detected, applying SOS2 stats.");
+            }
             if (ArmorStatFinal == null)
             {
                 ArmorStatFinal = new Dictionary<StatDef, float>();
@@ -236,7 +244,8 @@ namespace EvaPatcher
         public static bool IsSos2ModEnabled()
         {
             return ModLister.AllInstalledMods.Any(mod =>
-        mod.PackageId.ToString() == "kentington.saveourship2" && mod.Active);
+                mod.PackageId.ToString().ToLower().Contains("kentington.saveourship2") && mod.Active ||
+                mod.PackageId.ToString().ToLower().Contains("kentington.saveourship2_steam") && mod.Active);
         }
 
         public static bool IsOdesseyDlcEnabled()
