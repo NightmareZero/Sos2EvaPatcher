@@ -418,8 +418,23 @@ namespace EvaPatcher
             if (Widgets.ButtonImage(butRect: bottomRect.BottomPart(pct: 0.6f).TopPart(pct: 0.1f).RightPart(pct: 0.525f).LeftPart(pct: 0.1f), tex: TexUI.ArrowTexRight) &&
                 this.leftSelectedItem != null)
             {
-                rightList.Add(item: this.leftSelectedItem);
-                settings.eva = rightList.OrderBy(keySelector: td => td.LabelCap.RawText ?? td.defName).Select(selector: td => td.defName).ToList();
+                // Make sure settings list exists (do not rely on filtered rightList which may hide existing entries)
+                if (settings.eva == null)
+                    settings.eva = new List<string>();
+
+                string defNameToAdd = this.leftSelectedItem.defName;
+                // Only add if not already present
+                if (!settings.eva.Contains(defNameToAdd))
+                    settings.eva.Add(defNameToAdd);
+
+                // Keep list sorted by the display label (or defName if missing)
+                settings.eva = settings.eva
+                    .OrderBy(defName =>
+                    {
+                        var td = DefDatabase<ThingDef>.AllDefs.FirstOrDefault(x => x.defName == defName);
+                        return td != null ? (td.LabelCap.RawText ?? td.defName) : defName;
+                    }).ToList();
+
                 this.rightSelectedItem = this.leftSelectedItem;
                 this.leftSelectedItem = null;
                 EvaPatcher.AddEvaPatchFor(def: this.rightSelectedItem);
