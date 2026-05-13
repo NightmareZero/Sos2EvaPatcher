@@ -284,6 +284,11 @@ namespace EvaPatcher
             {
                 this.InitData();
             }
+            
+            if (this.enabled)
+            {
+                EvaPatcher.ReapplyAllPatches();
+            }
         }
 
         public void InitData()
@@ -606,6 +611,31 @@ namespace EvaPatcher
             }
         }
 
+        public static void ReapplyAllPatches()
+        {
+            LongEventHandler.ExecuteWhenFinished(() =>
+            {
+                if (Sos2EvaPatchMod.settings != null && Sos2EvaPatchMod.settings.enabled)
+                {
+                    foreach (var defName in Sos2EvaPatchMod.settings.eva)
+                    {
+                        var def = DefDatabase<ThingDef>.GetNamed(defName, false);
+                        if (def != null)
+                        {
+                            AddEvaPatchFor(def);
+                        }
+                    }
+                    
+                    if (Sos2EvaPatchMod.settings.patchEvaTag)
+                    {
+                        foreach (var def in DefDatabase<ThingDef>.AllDefs.Where(x => x.IsApparel && x.apparel.tags.Contains(DefValue.EvaTagName)))
+                        {
+                            AddEvaPatchFor(def);
+                        }
+                    }
+                }
+            });
+        }
 
 
     }
