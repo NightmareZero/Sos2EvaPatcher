@@ -92,16 +92,17 @@ namespace EvaPatcher
 
         public static void InitStats()
         {
-            if (IsOdesseyDlcEnabled())
-            { 
-                Log.Message("EvaPatcher: Odyssey DLC detected, applying Odyssey stats.");
-            }
-            if (IsSos2ModEnabled())
-            {
-                Log.Message("EvaPatcher: Save Our Ship 2 mod detected, applying SOS2 stats.");
-            }
             if (ArmorStatFinal == null)
             {
+                if (IsOdesseyDlcEnabled())
+                {
+                    Log.Message("EvaPatcher: Odyssey DLC detected, applying Odyssey stats.");
+                }
+                if (IsSos2ModEnabled())
+                {
+                    Log.Message("EvaPatcher: Save Our Ship 2 mod detected, applying SOS2 stats.");
+                }
+
                 ArmorStatFinal = new Dictionary<StatDef, float>();
                 foreach (var kvp in ArmorStatBase)
                 {
@@ -284,11 +285,6 @@ namespace EvaPatcher
             {
                 this.InitData();
             }
-            
-            if (this.enabled)
-            {
-                EvaPatcher.ReapplyAllPatches();
-            }
         }
 
         public void InitData()
@@ -323,6 +319,7 @@ namespace EvaPatcher
         {
             settings = GetSettings<Sos2EvaPatchSettings>();
             Instance = this;
+            EvaPatcher.ScheduleReapplyAllPatches();
         }
 
         public override string SettingsCategory() => "EvaPatcher.Name".Translate();
@@ -331,6 +328,7 @@ namespace EvaPatcher
         {
             base.DoSettingsWindowContents(inRect: inRect);
             Text.Font = GameFont.Medium;
+            bool settingsChanged = false;
 
             List<ThingDef> allApparel = GetAllArmorAndHelmet();
             List<ThingDef> evaApparel = allApparel.Where(x => settings.eva.Contains(x.defName)).ToList();
@@ -346,9 +344,19 @@ namespace EvaPatcher
             ls.Begin(topRect);
             // ls.GapLine();
             // enable eva patcher
+            bool enabledBefore = settings.enabled;
             ls.CheckboxLabeled("EvaPatcher.Enable".Translate(), ref settings.enabled, "EvaPatcher.Enable.Desc".Translate());
+            if (enabledBefore != settings.enabled)
+            {
+                settingsChanged = true;
+            }
             // set all appearel has eva tag to eva suit
+            bool patchEvaTagBefore = settings.patchEvaTag;
             ls.CheckboxLabeled("EvaPatcher.Evatag".Translate(), ref settings.patchEvaTag, "EvaPatcher.EvaTag.Desc".Translate());
+            if (patchEvaTagBefore != settings.patchEvaTag)
+            {
+                settingsChanged = true;
+            }
             ls.GapLine();
             // 搜索框放在topRect底部，使用Listing_Standard分配空间
             Rect searchRect = ls.GetRect(28f);
@@ -443,6 +451,7 @@ namespace EvaPatcher
                 this.rightSelectedItem = this.leftSelectedItem;
                 this.leftSelectedItem = null;
                 EvaPatcher.AddEvaPatchFor(def: this.rightSelectedItem);
+                settingsChanged = true;
                 // TODO MinifyEverything.RemoveMinifiedFor(def: this.rightSelectedDef);
             }
 
@@ -453,12 +462,17 @@ namespace EvaPatcher
                 this.leftSelectedItem = this.rightSelectedItem;
                 this.rightSelectedItem = null;
                 EvaPatcher.RemoveEvaPatchFor(def: this.leftSelectedItem);
+                settingsChanged = true;
                 // TODO MinifyEverything.AddMinifiedFor(def: this.leftSelectedDef);
             }
 
             #endregion
 
             settings.Write();
+            if (settingsChanged)
+            {
+                EvaPatcher.ScheduleReapplyAllPatches();
+            }
             base.DoSettingsWindowContents(inRect);
         }
 
@@ -478,21 +492,14 @@ namespace EvaPatcher
     [StaticConstructorOnStartup]
     public static class EvaPatcher
     {
+        private static bool reapplyQueued;
+
         static EvaPatcher()
         {
             Log.Message("Mod template loaded successfully!");
 
             // add patch after all thingdef loaded
-            LongEventHandler.ExecuteWhenFinished(action: () =>
-            {
-                if (Sos2EvaPatchMod.settings.enabled)
-                {
-                    DefDatabase<ThingDef>.AllDefs.Where(predicate: x => x.IsApparel)
-                    .ToList().ForEach(action: x => EvaApparelPostfix(x));
-
-                    Log.Message("EvaPatcher: Patched all apparel");
-                }
-            });
+            ScheduleReapplyAllPatches();
 
             // *Uncomment for Harmony*
             // Harmony harmony = new Harmony("rimworld.nightz.sos2EvaPatcher");
@@ -611,30 +618,49 @@ namespace EvaPatcher
             }
         }
 
-        public static void ReapplyAllPatches()
+        public static void ScheduleReapplyAllPatches()
         {
+            if (reapplyQueued)
+            {
+                return;
+            }
+
+            reapplyQueued = true;
             LongEventHandler.ExecuteWhenFinished(() =>
             {
-                if (Sos2EvaPatchMod.settings != null && Sos2EvaPatchMod.settings.enabled)
-                {
-                    foreach (var defName in Sos2EvaPatchMod.settings.eva)
-                    {
-                        var def = DefDatabase<ThingDef>.GetNamed(defName, false);
-                        if (def != null)
-                        {
-                            AddEvaPatchFor(def);
-                        }
-                    }
-                    
-                    if (Sos2EvaPatchMod.settings.patchEvaTag)
-                    {
-                        foreach (var def in DefDatabase<ThingDef>.AllDefs.Where(x => x.IsApparel && x.apparel.tags.Contains(DefValue.EvaTagName)))
-                        {
-                            AddEvaPatchFor(def);
-                        }
-                    }
-                }
+                reapplyQueued = false;
+                RebuildAllPatches();
             });
+        }
+
+        public static void RebuildAllPatches()
+        {
+            if (Sos2EvaPatchMod.settings == null)
+            {
+                return;
+            }
+
+            DefValue.InitStats();
+
+            foreach (var def in DefDatabase<ThingDef>.AllDefs.Where(x => x.IsApparel))
+            {
+                RemoveEvaPatchFor(def);
+
+                if (!Sos2EvaPatchMod.settings.enabled)
+                {
+                    continue;
+                }
+
+                bool shouldPatch = Sos2EvaPatchMod.settings.eva.Contains(def.defName) ||
+                    (Sos2EvaPatchMod.settings.patchEvaTag && def.apparel != null && def.apparel.tags != null && def.apparel.tags.Contains(DefValue.EvaTagName));
+
+                if (shouldPatch)
+                {
+                    AddEvaPatchFor(def);
+                }
+            }
+
+            Log.Message("EvaPatcher: Rebuilt all EVA patches");
         }
 
 
