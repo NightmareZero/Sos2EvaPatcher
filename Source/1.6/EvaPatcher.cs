@@ -642,19 +642,27 @@ namespace EvaPatcher
 
             DefValue.InitStats();
 
-            foreach (var def in DefDatabase<ThingDef>.AllDefs.Where(x => x.IsApparel))
+            if (!Sos2EvaPatchMod.settings.enabled)
             {
-                RemoveEvaPatchFor(def);
+                Log.Message("EvaPatcher: EVA patcher disabled, skipping patch rebuild");
+                return;
+            }
 
-                if (!Sos2EvaPatchMod.settings.enabled)
+            if (Sos2EvaPatchMod.settings.eva != null)
+            {
+                foreach (var defName in Sos2EvaPatchMod.settings.eva)
                 {
-                    continue;
+                    var def = DefDatabase<ThingDef>.GetNamed(defName, false);
+                    if (def != null && def.IsApparel)
+                    {
+                        AddEvaPatchFor(def);
+                    }
                 }
+            }
 
-                bool shouldPatch = Sos2EvaPatchMod.settings.eva.Contains(def.defName) ||
-                    (Sos2EvaPatchMod.settings.patchEvaTag && def.apparel != null && def.apparel.tags != null && def.apparel.tags.Contains(DefValue.EvaTagName));
-
-                if (shouldPatch)
+            if (Sos2EvaPatchMod.settings.patchEvaTag)
+            {
+                foreach (var def in DefDatabase<ThingDef>.AllDefs.Where(x => x.IsApparel && x.apparel != null && x.apparel.tags != null && x.apparel.tags.Contains(DefValue.EvaTagName)))
                 {
                     AddEvaPatchFor(def);
                 }
